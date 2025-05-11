@@ -4,3 +4,5 @@
 *.iml
 /gh-md-toc
 personal-build-and-develop.*
+minecraft-data/*
+mc-backups/*
