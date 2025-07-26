@@ -39,6 +39,14 @@ Configuration options with defaults:
 
     Instead of using format codes in the MOTD, Limbo requires [JSON chat content](https://minecraft.wiki/w/Raw_JSON_text_format#Java_Edition). If a plain string is provided, which is the default, then it gets converted into the required JSON structure. 
 
+## NanoLimbo
+
+A [NanoLimbo](https://github.com/BoomEaro/NanoLimbo) server can be run by setting `TYPE` to `NANOLIMBO`.
+
+Note: it is a fork of the original [NanoLimbo](https://github.com/Nan1t/NanoLimbo) made by Nan1t
+
+An alternate Limbo server
+
 ## Crucible
 
 A [Crucible](https://github.com/CrucibleMC/Crucible) server can be run by setting `TYPE` to `CRUCIBLE`.
