@@ -68,7 +68,7 @@ services:
       BACKUP_INTERVAL: "24h"
       RCON_HOST: tveit_effect
       RCON_PORT: 25575
-      
+
       # since this service waits for mc to be healthy, no initial delay is needed
       INITIAL_DELAY: 0
       # As an example, to backup only the world data:
