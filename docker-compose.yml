@@ -26,8 +26,10 @@ services:
       FORCE_GAMEMODE: "true"
       ENABLE_COMMAND_BLOCK: "true"
       STOP_SERVER_ANNOUNCE_DELAY: 60
+      #VIEW_DISTANCE: 9
+      #SIMULATION_DISTANCE: 9
+      RCON_PASSWORD: ""
 
-      
       SNOOPER_ENABLED: "false"
       USE_AIKAR_FLAGS: "true"
       # MEMORY: "20480M"
@@ -68,6 +70,7 @@ services:
       BACKUP_INTERVAL: "24h"
       RCON_HOST: tveit_effect
       RCON_PORT: 25575
+      RCON_PASSWORD: ""
 
       # since this service waits for mc to be healthy, no initial delay is needed
       INITIAL_DELAY: 0
