@@ -7,7 +7,7 @@
 ftbInstallMarker=".ftb-installed"
 
 # shellcheck source=start-utils
-. "${SCRIPTS:-/}start-utils"
+. "$(dirname "$0")/start-utils"
 isDebugging && set -x
 set -e
 
@@ -35,6 +35,12 @@ function getModLoaderVersion() {
 }
 function getMinecraftVersion() {
   jq -r ".modPackTargets.mcVersion" ${ftbManifest}
+}
+function getModpackName() {
+  jq -r ".name" ${ftbManifest}
+}
+function getModpackVersion() {
+  jq -r ".versionName" ${ftbManifest}
 }
 
 if [[ $(getDistro) = alpine ]]; then
@@ -87,7 +93,7 @@ if isTrue "$FTB_FORCE_REINSTALL" ||
 
   log "Installing modpack ID ${FTB_MODPACK_ID}, version ID ${FTB_MODPACK_VERSION_ID}"
   log "This could take a while..."
-  ${ftbInstaller} -pack "${FTB_MODPACK_ID}" -version "${FTB_MODPACK_VERSION_ID}" -auto -force | tee ftb-installer.log
+  ${ftbInstaller} -pack "${FTB_MODPACK_ID}" -version "${FTB_MODPACK_VERSION_ID}" -auto -force -no-java | tee ftb-installer.log
   rm -f forge*installer.jar
 
   echo "${FTB_MODPACK_ID}=${FTB_MODPACK_VERSION_ID}" > ${ftbInstallMarker}
@@ -102,7 +108,9 @@ modLoader="$(getModLoaderName)"
 modLoaderVersion="$(getModLoaderVersion)"
 mcVersion=$(getMinecraftVersion)
 VERSION="$mcVersion"
-export VERSION
+MODPACK_NAME=$(getModpackName)
+MODPACK_VERSION=$(getModpackVersion)
+export VERSION MODPACK_NAME MODPACK_VERSION
 
 variants=(
   run.sh
@@ -152,4 +160,4 @@ else
   exit 1
 fi
 
-exec "${SCRIPTS:-/}start-setupWorld" "$@"
+exec "$(dirname "$0")/start-setupWorld" "$@"

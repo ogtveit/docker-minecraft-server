@@ -27,12 +27,16 @@
     "cherished-worlds",
     "chunk-animator",
     "clickable-advancements",
+    "colorwheel",
+    "colorwheel-patcher",
     "compass-coords",
     "config-menus-forge",
     "configured",
     "controllable",
     "controlling",
     "craftpresence",
+    "crash-assistant",
+    "cull-less-leaves",
     "ctm",
     "custom-main-menu",
     "dark-mode-everywhere",
@@ -97,23 +101,28 @@
     "lootbeams",
     "magnesium-extras",
     "make-bubbles-pop",
+    "mekalus-oculus-fork-with-fixed-mekanism-mekasuit",
     "menumobs",
     "minecraft-rich-presence",
+    "mining-speed-tooltips",
     "model-gap-fix",
     "more-overlays",
     "mouse-tweaks",
     "neat",
     "nekos-enchanted-books",
+    "neoculus",
     "no-nv-flash",
     "no-recipe-book",
     "not-enough-animations",
     "oculus",
+    "ok-zoomer",
     "oldjavawarning",
     "overloaded-armor-bar",
     "packmenu",
     "packmodemenu",
     "particle-effects",
     "particle-effects-reforged",
+    "particle-rain",
     "particular",
     "particular-reforged",
     "reauth",
@@ -135,6 +144,7 @@
     "smart-hud",
     "smithing-template-viewer",
     "smooth-font",
+    "smooth-swapping",
     "smoothwater",
     "sodium",
     "sodium-extra",
@@ -144,6 +154,7 @@
     "sound-filters",
     "sound-physics-remastered",
     "sound-reloader",
+    "status-effect-bars-reforged",
     "stellar-sky",
     "swingthroughgrass",
     "textrues-embeddium-options",
@@ -157,6 +168,7 @@
     "vanillafix",
     "visuality",
     "waila-harvestability",
+    "waila-stages",
     "wakes-reforged",
     "wawla",
     "welcome-screen",
@@ -169,10 +181,27 @@
       "forceIncludes": ["revelationary"]
     },
     "beyond-depth": {
-      "forceIncludes": ["particular-reforged"]		
+      "forceIncludes": ["particular-reforged"]
     },
     "create-arcane-engineering": {
       "forceIncludes": ["just-enough-resources-jer"]
+    },
+    "ftb-stoneblock-4": {
+      "forceIncludes": [
+        "particular-reforged",
+        "ctm"
+      ]
+    },
+    "mc-eternal-2": {
+      "forceIncludes": [
+        "particular-reforged",
+        "mob-player-animator"
+      ]
+    },
+    "reclamation-reclaim-the-world": {
+      "forceIncludes": [
+        "more-overlays-updated"
+      ]
     },
     "skyfactory-5": {
       "forceIncludes": [

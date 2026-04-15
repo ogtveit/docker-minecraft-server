@@ -11,7 +11,6 @@ DEBIAN_FRONTEND=noninteractive \
 apt-get install -y \
   imagemagick \
   file \
-  gosu \
   sudo \
   net-tools \
   iputils-ping \
@@ -28,6 +27,7 @@ apt-get install -y \
   lbzip2 \
   nfs-common \
   libpcap0.8 \
+  libnuma1 \
   ${EXTRA_DEB_PACKAGES}
 
 # Install Git LFS

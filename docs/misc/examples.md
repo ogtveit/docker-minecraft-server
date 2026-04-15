@@ -6,11 +6,12 @@ Various examples are [maintained in the repository](https://github.com/itzg/dock
 
 Using the [GeyserMC plugin](https://geysermc.org/) with a Paper server (or similar) "enables clients from Minecraft Bedrock Edition to join your Minecraft Java server". The example also includes [Floodgate](https://wiki.geysermc.org/floodgate/) which "allows Xbox Live authenticated Bedrock users to join without a Java Edition account". 
 
-```yaml
+```yaml title="compose.yaml"
 
 services:
   mc:
-    image: itzg/minecraft-server
+    image: itzg/minecraft-server:latest
+    pull_policy: daily
     environment:
       EULA: "true"
       TYPE: "PAPER"
@@ -26,11 +27,53 @@ services:
 
 [Source](https://github.com/itzg/docker-minecraft-server/blob/master/examples/geyser/docker-compose.yml)
 
+
+## mc-router with auto-scale
+
+Using [mc-router](https://github.com/itzg/mc-router) in front of one or multiple Minecraft server containers allows you to route players based on the hostname they use to connect.
+
+With `AUTO_SCALE_UP` and `AUTO_SCALE_DOWN` enabled, mc-router can automatically start a target server when a player connects and stop it again after a period of inactivity.
+
+```yaml title="compose.yaml"
+services:
+  router:
+    image: itzg/mc-router
+    environment:
+      IN_DOCKER: true
+      AUTO_SCALE_DOWN: true
+      AUTO_SCALE_UP: true
+      AUTO_SCALE_DOWN_AFTER: 2h
+      AUTO_SCALE_ASLEEP_MOTD: "Server is asleep. Join again to wake it up!"
+    ports:
+      - "25565:25565"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  vanilla:
+    image: itzg/minecraft-server
+    environment:
+      EULA: "TRUE"
+    labels:
+      mc-router.host: "vanilla.example.com"
+
+  paper:
+    image: itzg/minecraft-server
+    environment:
+      EULA: "TRUE"
+      TYPE: PAPER
+    labels:
+      mc-router.host: "paper.example.com"
+```
+
+[Source](https://github.com/itzg/mc-router/blob/main/examples/docker-autoscale/compose-minimal.yml)
+
+[More detailed example](https://github.com/itzg/mc-router/blob/main/examples/docker-autoscale/compose.yml)
+
 ## Lazymc - Put your Minecraft server to rest when idle
 
 With [lazymc-docker-proxy](https://github.com/joesturge/lazymc-docker-proxy) you are able to use [lazymc](https://github.com/timvisee/lazymc) with the minecraft container.
 
-```yaml
+```yaml title="compose.yaml"
 # Lazymc requires that the minecraft server have a static IP.
 #
 # To ensure that our servers have a static IP we need to create
@@ -72,6 +115,7 @@ services:
   # Standard Docker Minecraft server, also works with other server types
   mc:
     image: itzg/minecraft-server:java21
+    pull_policy: daily
     # Assign a static IP to the server container
     networks:
       minecraft-network:
@@ -105,7 +149,7 @@ Monitors network traffic to the Minecraft containers. If there is traffic, the c
 
 By using [Lazytainer](https://github.com/vmorganp/Lazytainer) with the [docker-minecraft-server](https://github.com/itzg/docker-minecraft-server) a somehow similar behaviour to [Lazymc](https://github.com/timvisee/lazymc) can be archived.
 
-```yaml
+```yaml title="compose.yaml"
 services:
   lazytainer:
     image: ghcr.io/vmorganp/lazytainer:master
@@ -123,7 +167,8 @@ services:
     restart: unless-stopped
     network_mode: bridge
   mc:
-    image: itzg/minecraft-server
+    image: itzg/minecraft-server:latest
+    pull_policy: daily
     environment:
       EULA: TRUE
       TYPE: PAPER

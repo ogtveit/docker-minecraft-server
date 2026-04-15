@@ -10,7 +10,6 @@ apk add --no-cache -U \
     imagemagick \
     file \
     lsof \
-    su-exec \
     coreutils \
     findutils \
     procps \
@@ -32,6 +31,7 @@ apk add --no-cache -U \
     libpcap \
     libwebp \
     libcap \
+    numactl \
     ${EXTRA_ALPINE_PACKAGES}
 
 # Download and install patched knockd

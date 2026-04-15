@@ -4,8 +4,8 @@ A [Fabric server](https://fabricmc.net/) can be automatically downloaded, upgrad
 
     Using `docker run` command line
 
-    ```
-    docker run -d -e EULA=TRUE -e TYPE=FABRIC -p 25565:25565 itzg/minecraft-server
+    ```shell
+    docker run -d --pull=always -e EULA=TRUE -e TYPE=FABRIC -p 25565:25565 itzg/minecraft-server
     ```
     
     In a compose file service:
@@ -24,7 +24,7 @@ A specific loader or launcher version other than the latest can be requested usi
 
     With docker run
 
-    ```
+    ```shell
     docker run -d ... \
         -e TYPE=FABRIC \
         -e FABRIC_LAUNCHER_VERSION=0.10.2 \
@@ -40,6 +40,8 @@ A specific loader or launcher version other than the latest can be requested usi
       FABRIC_LAUNCHER_VERSION: 0.10.2
       FABRIC_LOADER_VERSION: 0.13.1
     ```
+
+The container fetches Fabric loader and game version metadata from the [Fabric meta API](https://meta.fabricmc.net). You can override the base URL with `FABRIC_META_BASE_URL` (default: `https://meta.fabricmc.net`), for example when using a mirror or custom meta endpoint.
 
 !!! note
 

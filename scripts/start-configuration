@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # shellcheck source=start-utils
-. "${SCRIPTS:-/}start-utils"
+. "$(dirname "$0")/start-utils"
 
 : "${EULA:=}"
 : "${PROXY:=}"
@@ -28,7 +28,11 @@ shopt -s nullglob
 
 isDebugging && set -x
 
-#umask 002
+if (( $(mc-image-helper java-release) >= 17 )); then
+  MC_IMAGE_HELPER_OPTS+=" --enable-native-access=ALL-UNNAMED"
+  export MC_IMAGE_HELPER_OPTS
+fi
+
 export HOME=/data
 
 log "Running as uid=$(id -u) gid=$(id -g) with /data as '$(ls -lnd /data)'"
@@ -50,8 +54,8 @@ fi
 
 if isTrue "${DEBUG_MEMORY:-false}"; then
   log "Memory usage and availability (in MB)"
-  uname -a
-  free -m
+  uname -pars | applyLogPrefix
+  free -m | applyLogPrefix
 fi
 
 ##########################################
@@ -91,31 +95,43 @@ fi
 ##########################################
 # Auto-pause/stop
 
-if isTrue "${ENABLE_AUTOPAUSE}" && isTrue "${EXEC_DIRECTLY:-false}"; then
-    logError "EXEC_DIRECTLY=true is incompatible with ENABLE_AUTOPAUSE=true"
-    exit 1
-fi
-
 if isTrue "${ENABLE_AUTOPAUSE}" && isTrue "${ENABLE_AUTOSTOP}"; then
     logError "ENABLE_AUTOPAUSE=true is incompatible with ENABLE_AUTOSTOP=true"
     exit 1
 fi
 
+proxyArgs=()
 if [[ $PROXY ]]; then
     export http_proxy="$PROXY"
     export https_proxy="$PROXY"
-    export JAVA_TOOL_OPTIONS+="-Djava.net.useSystemProxies=true"
-    log "INFO: Giving proxy time to startup..."
-    sleep 5
+
+    IFS=":"
+    read -ra parts <<< "$PROXY"
+    IFS=" "
+    : "${PROXY_HOST=$(firstArrayElement parts)}"
+    shiftArray parts
+    : "${PROXY_PORT=$(firstArrayElement parts)}"
 fi
+
+# https://docs.oracle.com/javase/7/docs/api/java/net/doc-files/net-properties.html
+proxyArgs=()
+function addToProxyArgs() {
+  if [[ $2 ]]; then
+    proxyArgs+=("-D$1=$2")
+  fi
+}
+addToProxyArgs http.proxyHost "${PROXY_HOST:-}"
+addToProxyArgs http.proxyPort "${PROXY_PORT:-}"
+addToProxyArgs http.nonProxyHosts "${PROXY_NON_PROXY_HOSTS:-}"
+export MC_IMAGE_HELPER_OPTS+=" ${proxyArgs[*]}"
 
 function fixJavaPath() {
   # Some Docker management UIs grab all the image declared variables and present them for configuration.
-  # When upgrading images across Java versions, that creates a mismatch in PATH's expected by base image.
+  # When upgrading images across Java versions, that creates parts mismatch in PATH's expected by base image.
   if ! which java > /dev/null; then
     logError "       Your Docker provider has an annoying flaw where it"
     logError "       tries to set PATH even though the container establishes"
-    logError "       a very specific value."
+    logError "       parts very specific value."
     sleep 2
     # now find where java might be
     for d in /opt/java/openjdk/bin /usr/bin; do
@@ -139,12 +155,23 @@ cd /data || exit 1
 export DECLARED_TYPE=${TYPE^^}
 export DECLARED_VERSION="$VERSION"
 
-if isTrue "${ENABLE_AUTOPAUSE}"; then
-  "${SCRIPTS:-/}start-autopause"
+if isTrue "${VERSION_FROM_MODRINTH_PROJECTS:-}" && [[ ${MODRINTH_PROJECTS:-} ]]; then
+  args=()
+  if [[ ${MODRINTH_PROJECTS_DEFAULT_VERSION_TYPE:-} ]]; then
+    args+=(--allowed-version-type "${MODRINTH_PROJECTS_DEFAULT_VERSION_TYPE:-}")
+  fi
+  if ! VERSION=$(mc-image-helper version-from-modrinth-projects "${args[@]}" --projects "${MODRINTH_PROJECTS}"); then
+    logError "failed to resolve version from MODRINTH_PROJECTS: ${MODRINTH_PROJECTS}"
+    exit 1
+  fi
+  log "Resolved Minecraft version $VERSION from Modrinth projects"
+  export VERSION
 fi
 
-if isTrue "${ENABLE_AUTOSTOP}"; then
-  "${SCRIPTS:-/}start-autostop"
+if isTrue "${ENABLE_AUTOPAUSE}"; then
+  "$(dirname "$0")/start-autopause"
+elif isTrue "${ENABLE_AUTOSTOP}"; then
+  "$(dirname "$0")/start-autostop"
 fi
 
 if
@@ -156,7 +183,7 @@ if
 then
   log "Starting RCON commands"
   # shellcheck source=start-rconcmds
-  "${SCRIPTS:-/}start-rconcmds"
+  "$(dirname "$0")/start-rconcmds"
 fi
 
 : "${MODPACK_PLATFORM:=${MOD_PLATFORM:-}}"
@@ -166,7 +193,7 @@ if [[ $MODPACK_PLATFORM && $TYPE && $TYPE != VANILLA ]]; then
 fi
 
 case "${TYPE^^}" in
-  AUTO_CURSEFORGE|MODRINTH|CURSEFORGE|FTB|FTBA)
+  AUTO_CURSEFORGE|MODRINTH|CURSEFORGE|FTB|FTBA|GTNH)
     MODPACK_PLATFORM="$TYPE"
   ;;
 esac
@@ -174,19 +201,23 @@ esac
 if [[ $MODPACK_PLATFORM ]]; then
   case "${MODPACK_PLATFORM^^}" in
     FTB|CURSEFORGE)
-      exec "${SCRIPTS:-/}start-deployCF" "$@"
+      exec "$(dirname "$0")/start-deployCF" "$@"
     ;;
 
     FTBA)
-      exec "${SCRIPTS:-/}start-deployFTBA" "$@"
+      exec "$(dirname "$0")/start-deployFTBA" "$@"
     ;;
 
     AUTO_CURSEFORGE)
-      exec "${SCRIPTS:-/}start-deployAutoCF" "$@"
+      exec "$(dirname "$0")/start-deployAutoCF" "$@"
       ;;
 
     MODRINTH)
-      exec "${SCRIPTS:-/}start-deployModrinth" "$@"
+      exec "$(dirname "$0")/start-deployModrinth" "$@"
+      ;;
+
+    GTNH)
+      exec "$(dirname "$0")/start-deployGTNH" "$@"
       ;;
 
     *)
@@ -199,106 +230,102 @@ fi
 log "Resolving type given ${TYPE}"
 case "${TYPE^^}" in
   *BUKKIT|SPIGOT)
-    exec "${SCRIPTS:-/}start-deployBukkitSpigot" "$@"
+    exec "$(dirname "$0")/start-deployBukkitSpigot" "$@"
   ;;
 
   PAPER)
-    exec "${SCRIPTS:-/}start-deployPaper" "$@"
+    exec "$(dirname "$0")/start-deployPaper" "$@"
   ;;
 
   FOLIA)
-    exec "${SCRIPTS:-/}start-deployFolia" "$@"
+    exec "$(dirname "$0")/start-deployFolia" "$@"
   ;;
 
   FORGE)
-    exec "${SCRIPTS:-/}start-deployForge" "$@"
+    exec "$(dirname "$0")/start-deployForge" "$@"
   ;;
 
   NEOFORGE|NEOFORGED)
-    exec "${SCRIPTS:-/}start-deployNeoForge" "$@"
+    exec "$(dirname "$0")/start-deployNeoForge" "$@"
   ;;
 
   FABRIC)
-    exec "${SCRIPTS:-/}start-deployFabric" "$@"
+    exec "$(dirname "$0")/start-deployFabric" "$@"
   ;;
 
   QUILT)
-    exec "${SCRIPTS:-/}start-deployQuilt" "$@"
+    exec "$(dirname "$0")/start-deployQuilt" "$@"
   ;;
 
   VANILLA)
-    exec "${SCRIPTS:-/}start-deployVanilla" "$@"
+    exec "$(dirname "$0")/start-deployVanilla" "$@"
   ;;
 
   SPONGEVANILLA)
-    exec "${SCRIPTS:-/}start-deploySpongeVanilla" "$@"
+    exec "$(dirname "$0")/start-deploySpongeVanilla" "$@"
   ;;
 
   CUSTOM)
-    exec "${SCRIPTS:-/}start-deployCustom" "$@"
+    exec "$(dirname "$0")/start-deployCustom" "$@"
   ;;
 
   MAGMA)
-    exec "${SCRIPTS:-/}start-deployMagma" "$@"
+    exec "$(dirname "$0")/start-deployMagma" "$@"
   ;;
 
   MAGMA_MAINTAINED)
-    exec "${SCRIPTS:-/}start-deployMagmaMaintained" "$@"
+    exec "$(dirname "$0")/start-deployMagmaMaintained" "$@"
   ;;
 
   KETTING)
-    exec "${SCRIPTS:-/}start-deployKetting" "$@"
+    exec "$(dirname "$0")/start-deployKetting" "$@"
   ;;
 
   MOHIST|YOUER|BANNER)
-    exec "${SCRIPTS:-/}start-deployMohist" "$@"
-  ;;
-
-  CATSERVER)
-    exec "${SCRIPTS:-/}start-deployCatserver" "$@"
+    exec "$(dirname "$0")/start-deployMohist" "$@"
   ;;
 
   PURPUR)
-    exec "${SCRIPTS:-/}start-deployPurpur" "$@"
+    exec "$(dirname "$0")/start-deployPurpur" "$@"
   ;;
 
   PUFFERFISH)
-    exec "${SCRIPTS:-/}start-deployPufferfish" "$@"
+    exec "$(dirname "$0")/start-deployPufferfish" "$@"
   ;;
 
   CANYON)
-    exec "${SCRIPTS:-/}start-deployCanyon" "$@"
+    exec "$(dirname "$0")/start-deployCanyon" "$@"
   ;;
 
   LIMBO)
-    exec "${SCRIPTS:-/}start-deployLimbo" "$@"
+    exec "$(dirname "$0")/start-deployLimbo" "$@"
   ;;
 
   NANOLIMBO)
-    exec "${SCRIPTS:-/}start-deployNanoLimbo" "$@"
+    exec "$(dirname "$0")/start-deployNanoLimbo" "$@"
   ;;
 
   CRUCIBLE)
-    exec "${SCRIPTS:-/}start-deployCrucible" "$@"
+    exec "$(dirname "$0")/start-deployCrucible" "$@"
   ;;
 
   LEAF)
-    exec "${SCRIPTS:-/}start-deployLeaf" "$@"
+    exec "$(dirname "$0")/start-deployLeaf" "$@"
   ;;
 
   ARCLIGHT)
-    exec "${SCRIPTS:-/}start-deployArcLight" "$@"
+    exec "$(dirname "$0")/start-deployArcLight" "$@"
   ;;
 
   POSEIDON)
-    exec "${SCRIPTS:-/}start-deployPoseidon" "$@"
+    exec "$(dirname "$0")/start-deployPoseidon" "$@"
   ;;
 
   *)
       logError "Invalid TYPE: '$TYPE'"
       logError "Must be: VANILLA, FORGE, BUKKIT, SPIGOT, PAPER, FOLIA, PURPUR, FABRIC, QUILT,"
-      logError "         SPONGEVANILLA, CUSTOM, MAGMA, MOHIST, CATSERVER, AIRPLANE, PUFFERFISH,"
-      logError "         CANYON, LIMBO, NANOLIMBO, CRUCIBLE, LEAF, YOUER, BANNER"
+      logError "         SPONGEVANILLA, CUSTOM, MAGMA, MOHIST, GTNH, AIRPLANE, PUFFERFISH,"
+      logError "         CANYON, LIMBO, NANOLIMBO, CRUCIBLE, LEAF, YOUER, BANNER, NEOFORGE"
       exit 1
   ;;
 

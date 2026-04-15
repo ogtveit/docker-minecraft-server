@@ -12,27 +12,22 @@ where `<tag>` refers to the first column of this table:
 
 | Tag            | Java version | Linux  | JVM Type           | Architecture        | Note |
 |----------------|--------------|--------|--------------------|---------------------|------|
-| latest         | 21           | Ubuntu | Hotspot            | amd64, arm64        |      |
-| stable         | 21           | Ubuntu | Hotspot            | amd64, arm64        |      |
-| java24         | 24           | Ubuntu | Hotspot            | amd64, arm64        | (2)  |
-| java24-graalvm | 24           | Oracle | Oracle GraalVM (3) | amd64, arm64        | (2)  |   
+| latest         | 25           | Ubuntu | Hotspot            | amd64, arm64        |      |
+| stable         | 25           | Ubuntu | Hotspot            | amd64, arm64        |      |
+| java25         | 25           | Ubuntu | Hotspot            | amd64, arm64        |      |
+| java25-alpine  | 25           | Alpine | Hotspot            | amd64, arm64        |      |
+| java25-jdk     | 25           | Ubuntu | Hotspot+JDK        | amd64, arm64        |      |
 | java21         | 21           | Ubuntu | Hotspot            | amd64, arm64        |      |
 | java21-jdk     | 21           | Ubuntu | Hotspot+JDK        | amd64, arm64        |      |
 | java21-alpine  | 21           | Alpine | Hotspot            | amd64, arm64        |      |
-| java21-graalvm | 21           | Oracle | Oracle GraalVM (3) | amd64, arm64        |      |   
 | java17         | 17           | Ubuntu | Hotspot            | amd64, arm64, armv7 |      |
-| java17-graalvm | 17           | Oracle | Oracle GraalVM (3) | amd64, arm64        |      |   
-| java17-alpine  | 17           | Alpine | Hotspot            | amd64  (1)          |      |
-| java16         | 16           | Ubuntu | Hotspot            | amd64, arm64, armv7 | (4)  |
+| java16         | 16           | Ubuntu | Hotspot            | amd64, arm64, armv7 | (1)  |
 | java11         | 11           | Ubuntu | Hotspot            | amd64, arm64, armv7 |      |
 | java8          | 8            | Ubuntu | Hotspot            | amd64, arm64, armv7 |      |
 
 Notes
 
-1. Why no arm64 for Java 17 Alpine? That is because the base images, such as [elipse-temurin](https://hub.docker.com/_/eclipse-temurin/tags?page=&page_size=&ordering=&name=17-jre-alpine) do not provide support for that. Use the Ubuntu based images instead.
-2. Short-term variant, subject to deprecation upon next version introduction
-3. Based on the [Oracle GraalMV images](https://blogs.oracle.com/java/post/new-oracle-graalvm-container-images), which as of JDK 17, are now under the [GraalVM Free License](https://blogs.oracle.com/java/post/graalvm-free-license) incorporating what used to be known as the GraalVM Enterprise.
-4. This version of Java is [recommended for PaperMC 1.16.5](https://docs.papermc.io/paper/getting-started/#requirements)
+1. This version of Java is [recommended for PaperMC 1.16.5](https://docs.papermc.io/paper/getting-started/#requirements)
 
 !!! example "Example using java8"
 
@@ -126,6 +121,7 @@ Forge also doesn't support openj9 JVM implementation.
 
 The following image tags have been deprecated and are no longer receiving updates:
 
+- java25-graalvm, java21-graalvm, java17-graalvm
 - adopt13
 - adopt14
 - adopt15
@@ -134,8 +130,15 @@ The following image tags have been deprecated and are no longer receiving update
 - java16-openj9
 - java17-graalvm-ce
 - java17-openj9
+- java17-alpine
 - java19
 - java20-graalvm, java20, java20-alpine
 - java23-*
+- java24, java24-graalvm 
 - java8-multiarch is still built and pushed, but please move to java8 instead
 - java8-alpine, java8-jdk, java8-openj9, java8-graalvm-ce
+
+## JSON Listing
+
+
+Information about the image tags is available for programmatic access at <https://raw.githubusercontent.com/itzg/docker-minecraft-server/refs/heads/master/images.json>

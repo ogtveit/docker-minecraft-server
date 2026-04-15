@@ -11,73 +11,74 @@ Adding a new server `TYPE` can vary due to the complexity of obtaining and confi
 
 ## Iterative script development
 
-Individual scripts can be iteratively developed, debugged, and tested using the following procedure.
-
-First, build a baseline of the image to include the packages needed by existing or new scripts:
-
-PowerShell: (Example of building and testing ForgeAPI)
-```powershell
-$env:FOLDER_TO_TEST="forgeapimods_projectids"
-$env:IMAGE_TO_TEST="mc-dev"
-docker build -t $env:IMAGE_TO_TEST .
-pushd "tests/setuponlytests/$env:FOLDER_TO_TEST/"
-docker-compose run mc
-docker-compose down -v --remove-orphans
-popd
-```
-
-PowerShell: Building different images of Java for testing
-```powershell
-$env:BASE_IMAGE='eclipse-temurin:8u312-b07-jre'
-$env:IMAGE_TO_TEST="mc-dev"
-docker build --build-arg BASE_IMAGE=$env:BASE_IMAGE -t $env:IMAGE_TO_TEST .
-```
-
-Bash: (Example of building and testing ForgeAPI)
-```bash
-export FOLDER_TO_TEST="forgeapimods_file"
-export IMAGE_TO_TEST="mc-dev"
-docker build -t $IMAGE_TO_TEST .
-pushd tests/setuponlytests/$FOLDER_TO_TEST/
-docker-compose run mc
-docker-compose down -v --remove-orphans
-popd
-```
-
-Using the baseline image, an interactive container can be started to iteratively run the scripts to be developed. By attaching the current workspace directory, you can use the local editor of your choice to iteratively modify scripts while using the container to run them.
+The included `compose-dev.yml` will mount the local `scripts` code into the container and allow for iterative development. Replace `[-e key=value]` with any environment variables you wish to set for testing the modified scripts.
 
 ```shell
-docker run -it --rm -v ${PWD}:/scripts -e SCRIPTS=/scripts/ --entrypoint bash mc-dev
+docker compose -f compose-dev.yml run --rm -it [-e key=value]  mc-dev
 ```
 
-From within the container you can run individual scripts via the attached `/scripts/` path; however, be sure to set any environment variables expected by the scripts by either `export`ing them manually:
+!!! tip
 
-```shell
-export VERSION=1.12.2
-/scripts/start-magma
+    To speed up the development cycle, it is recommended to set `SETUP_ONLY` to `true` as part of the run command above.
+
+## Building the image with a new release of a tool
+
+In this exapmle, let's say that [mc-image-helper](https://github.com/itzg/mc-image-helper) has been [released](https://github.com/itzg/mc-image-helper/releases) at 1.56.0, but the corresponding changes in the image [scripts](https://github.com/itzg/docker-minecraft-server/tree/23205471db9814cff9c6602361dbc6cdd6c4230a/scripts) need to be tested against that version while updating [the Dockerfile](https://github.com/itzg/docker-minecraft-server/blob/23205471db9814cff9c6602361dbc6cdd6c4230a/Dockerfile#L58).
+
+```yaml title="tests/manual/optional-projects/compose.yml" hl_lines="7"
+services:
+  mc:
+    build:
+      # ...or wherever you cloned the docker-minecraft-server repo
+      context: ../../..
+      args:
+        MC_HELPER_VERSION: 1.56.0
+    environment:
+      EULA: true
+      TYPE: "FABRIC"
+      MODRINTH_PROJECTS: |
+        fabric-api
+        pl3xmap?:beta
+    ports:
+      - "25565:25565/tcp"
+    volumes:
+      - ./data:/data
 ```
-
-...or pre-pending script execution:
-
-```shell
-VERSION=1.12.2 /scripts/start-magma
-```
-
-!!! note
-
-    You may want to temporarily add an `exit` statement near the end of your script to isolate execution to just the script you're developing.
 
 ## Using development copy of tools
 
-In the cloned repo, such as [`mc-image-helper`](https://github.com/itzg/mc-image-helper), create an up-to-date snapshot build of the tgz distribution using:
+In the cloned repo, such as [`mc-image-helper`](https://github.com/itzg/mc-image-helper), install the distribution locally by running:
 
 ```shell
-./gradlew distTar
+./gradlew installDist
 ```
 
-!!! note
+The distribution will be installed in the project's `build/install/mc-image-helper`. Obtain the absolute path to that directory use in the next step.
 
-    The distribution's version will be `0.0.0-<branch>-SNAPSHOT`
+Refer to the instructions above to mount any locally modified image scripts or build a local copy of the image using or with alternate `BASE_IMAGE`, as described above:
+
+```shell
+docker build -t itzg/minecraft-server .
+```
+
+Mount the local mc-image-helper distribution directory as a volume in the container at the path `/usr/share/mc-image-helper`, such as
+
+```shell
+docker run -it --rm \
+  -v /path/to/mc-image-helper/build/install/mc-image-helper:/usr/share/mc-image-helper \
+  -e EULA=true \
+  itzg/minecraft-server
+```
+
+In a compose file, include the volume mount in the `volumes` section of the container definition:
+
+```yaml
+services:
+  mc:
+    # ... usual container definition
+    volumes:
+      - /path/to/mc-image-helper/build/install/mc-image-helper:/usr/share/mc-image-helper:ro
+```
 
 For Go base tools, run
 

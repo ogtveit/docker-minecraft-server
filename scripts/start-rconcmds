@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # shellcheck source=start-utils
-. "${SCRIPTS:-/}start-utils"
+. "$(dirname "$0")/start-utils"
 
 : "${RCON_CMDS_STARTUP:=}"
 : "${RCON_CMDS_ON_CONNECT:=}"
@@ -25,4 +25,4 @@ isDebugging && set -x
 isNumericElseSetToDefault RCON_CMDS_PERIOD 10
 checkIfNotZeroElseSetToDefault RCON_CMDS_PERIOD 10
 
-/usr/local/bin/rcon-cmds-daemon.sh &
+"$(dirname "$0")/auto/rcon-cmds-daemon.sh" &

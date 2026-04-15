@@ -10,7 +10,7 @@ A [Forge server](http://www.minecraftforge.net/) can be automatically downloaded
 
 !!! example
 
-    ```
+    ```shell
     docker run -e TYPE=FORGE ...
     ```
     
@@ -25,7 +25,7 @@ The overall version is specified by `VERSION`, [as described in the section abov
 
 !!! example
 
-    ```
+    ```shell
     docker run -e TYPE=FORGE -e VERSION=1.12.2 -e FORGE_VERSION=14.23.5.2854 ...
     ```
     
@@ -45,6 +45,11 @@ In both of the cases above, there is no need for the `VERSION` or `FORGE_VERSION
 
     If an error occurred while installing Forge, it might be possible to resolve by temporarily setting `FORGE_FORCE_REINSTALL` to "true". Be sure to remove that variable after successfully starting the server.
 
+URLs configurable via environment variables:
+
+- `FORGE_PROMOTIONS_URL`: default is https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json
+- `FORGE_MAVEN_REPO_URL`: default is https://maven.minecraftforge.net
+
 ## Alternatives
 
 ### NeoForge
@@ -53,7 +58,7 @@ Support for [NeoForge](https://neoforged.net/) is also provided. A NeoForge serv
 
 !!! example
 
-    ```
+    ```shell
     docker run -e TYPE=NEOFORGE -e VERSION=1.20.1 -e NEOFORGE_VERSION=47.1.79 ...
     ```
     

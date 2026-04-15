@@ -27,6 +27,18 @@ There are optional volume paths that can be attached to supply content to be cop
 `/plugins`
 : content in this directory is synchronized into `/data/plugins` for server types that use plugins, [as described above](#mods-vs-plugins). For special cases, the source can be changed by setting `COPY_PLUGINS_SRC` and destination by setting `COPY_PLUGINS_DEST`. If using a mod-based loader, such as Forge or Fabric, but a hybrid mod like [Cardboard](https://modrinth.com/mod/cardboard), then set `USES_PLUGINS` to have the automation utilize `/plugins` mount.
 
+!!! example "Using Cardboard plugins with Fabric"
+
+    ```yaml
+        environment:
+          EULA: "TRUE"
+          TYPE: "FABRIC"
+          MODRINTH_PROJECTS: |
+            fabric-api
+            cardboard
+          USES_PLUGINS: true
+    ```
+
 `/mods`
 : content in this directory is synchronized into `/data/mods` for server types that use mods, [as described above](#mods-vs-plugins). For special cases, the source can be changed by setting `COPY_MODS_SRC` and destination by setting `COPY_MODS_DEST`.
 
@@ -65,7 +77,31 @@ These paths work well if you want to have a common set of modules in a separate 
 
     Alternatively, you can declare other directories along with files and URLs to use in [the `MODS` / `PLUGINS` variables](#modsplugins-list).
 
+## Applying extra configuration files
 
+You can download/copy additional configuration files or other resources before the server starts by using the `APPLY_EXTRA_FILES` environment variable. This is useful for downloading configs that you want to patch or modify during the startup process.
+
+The format uses a `<` separator between the destination path and the source URL/path. The destination path is relative to the `/data` directory. If specifying a source path, it needs to be path mounted within the container.
+
+!!! example
+
+    With `docker run`
+    
+    ```
+    -e APPLY_EXTRA_FILES=destination<source_url[,destination2<source_url2,...]
+    ```
+    
+    With a compose file:
+    ```yaml
+    environment:
+      APPLY_EXTRA_FILES: |
+        destination<source1_url
+        destination2<source2_path
+    ```
+
+!!! tip "Patch-able"
+
+The `APPLY_EXTRA_FILES` feature is processed prior to [patch processing](../configuration/interpolating.md#patching-existing-files), so this can be used as for baseline files to be patched further at runtime.
 
 ## Zip file modpack
 
@@ -132,6 +168,14 @@ The newline delimiting allows for compose file usage like:
         https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
         https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
 ```
+
+!!! note "Auto-removal"
+
+    Entries that are removed from the `MODS` or `PLUGINS` list will be automatically removed from the `mods` or `plugins` directory. This is useful for removing mods/plugins that are no longer needed. An empty `MODS` or `PLUGINS` list will remove all mods/plugins.
+
+!!! note "Disable processing"
+
+    To temporarily disable processing of the `MODS` or `PLUGINS` list, then comment out the `MODS` or `PLUGINS` environment variable.
 
 ## Mod/Plugin URL Listing File 
 

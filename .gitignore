@@ -8,3 +8,4 @@ minecraft-data/*
 mc-backups/*
 .rcon-password
 key
+site/

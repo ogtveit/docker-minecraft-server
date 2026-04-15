@@ -3,17 +3,18 @@
 set -e -o pipefail
 
 : "${REMOVE_OLD_MODS:=false}"
-: "${MODS:=}"
 : "${MODS_OUT_DIR:=/data/mods}"
 : "${MODS_FILE:=}"
-: "${PLUGINS:=}"
 : "${PLUGINS_OUT_DIR:=/data/plugins}"
 : "${PLUGINS_FILE:=}"
 : "${REMOVE_OLD_MODS_DEPTH:=1} "
 : "${REMOVE_OLD_MODS_INCLUDE:=*.jar,*-version.json}"
 : "${CF_API_KEY_FILE:=}" # Path to file containing CurseForge API key
 : "${MODRINTH_LOADER:=}"
-sum_file=/data/.generic_pack.sum
+
+# shellcheck source=start-utils
+. "$(dirname "$0")/start-utils"
+isDebugging && set -x
 
 if [[ -n ${CF_API_KEY_FILE} ]]; then
   if [[ -r "${CF_API_KEY_FILE}" ]]; then
@@ -25,13 +26,7 @@ if [[ -n ${CF_API_KEY_FILE} ]]; then
   fi
 fi
 
-# shellcheck source=start-utils
-. "${SCRIPTS:-/}start-utils"
-isDebugging && set -x
-
-#  CURSE_URL_BASE used in manifest downloads below
-CURSE_URL_BASE=${CURSE_URL_BASE:-https://minecraft.curseforge.com/projects}
-
+sum_file=/data/.generic_pack.sum
 # Remove old mods/plugins
 if isTrue "${REMOVE_OLD_MODS}" && [ -z "${MODS_FILE}" ]; then
   removeOldMods "$MODS_OUT_DIR"
@@ -94,7 +89,7 @@ fi
 
 function handleListings() {
   if usesMods && usesPlugins; then
-      if [[ "$MODS" ]]; then
+      if [[ -v MODS ]]; then
 
         ensureRemoveAllModsOff "MODS is set"
 
@@ -105,7 +100,7 @@ function handleListings() {
           --to="$MODS_OUT_DIR" \
           "$MODS"
       fi
-      if [[ "$PLUGINS" ]]; then
+      if [[ -v PLUGINS ]]; then
         ensureRemoveAllModsOff "PLUGINS is set"
         mkdir -p "$PLUGINS_OUT_DIR"
         mc-image-helper mcopy \
@@ -140,14 +135,14 @@ function handleListings() {
       outDir="$PLUGINS_OUT_DIR"
     fi
 
-    if [[ "$MODS" || "$PLUGINS" ]]; then
+    if [[ -v MODS || -v PLUGINS ]]; then
       ensureRemoveAllModsOff "MODS or PLUGINS is set"
       mkdir -p "$outDir"
       mc-image-helper mcopy \
         --glob=*.jar \
         --scope=var-list \
         --to="$outDir" \
-        "$MODS" "$PLUGINS"
+        "${MODS:-}" "${PLUGINS:-}"
     fi
 
     if [[ "$MODS_FILE" || "$PLUGINS_FILE" ]]; then
@@ -255,15 +250,15 @@ function handleGenericPacks() {
 }
 
 function handleModrinthProjects() {
-  : "${MODRINTH_PROJECTS:=}"
-  : "${MODRINTH_ALLOWED_VERSION_TYPE:=release}"
+  # need to be backward compatible with old variable name, MODRINTH_ALLOWED_VERSION_TYPE
+  : "${MODRINTH_PROJECTS_DEFAULT_VERSION_TYPE:=${MODRINTH_ALLOWED_VERSION_TYPE:-release}}"
   : "${MODRINTH_DOWNLOAD_DEPENDENCIES:=none}"
   if [[ -v MODRINTH_DOWNLOAD_OPTIONAL_DEPENDENCIES ]]; then
     logWarning "The variable MODRINTH_DOWNLOAD_OPTIONAL_DEPENDENCIES is removed."
     logWarning "        Use MODRINTH_DOWNLOAD_DEPENDENCIES=optional instead"
   fi
 
-  if [[ $MODRINTH_PROJECTS ]]; then
+  if [[ -v MODRINTH_PROJECTS ]]; then
 
     if isType CUSTOM; then
       if ! [[ $MODRINTH_LOADER ]]; then
@@ -286,7 +281,7 @@ function handleModrinthProjects() {
       --game-version="${VERSION}" \
       --loader="$loader" \
       --download-dependencies="$MODRINTH_DOWNLOAD_DEPENDENCIES" \
-      --allowed-version-type="$MODRINTH_ALLOWED_VERSION_TYPE"
+      --allowed-version-type="$MODRINTH_PROJECTS_DEFAULT_VERSION_TYPE"
   fi
 }
 
@@ -315,7 +310,7 @@ function handleCurseForgeFiles() {
   # since we want CURSEFORGE_FILES to expand
   mc-image-helper curseforge-files \
     "${args[@]}" \
-    ${CURSEFORGE_FILES}
+    "${CURSEFORGE_FILES}"
 }
 
 handlePackwiz
@@ -366,4 +361,4 @@ case "X$MODCONFIG" in
 esac
 fi
 
-exec "${SCRIPTS:-/}start-setupMounts" "$@"
+exec "$(dirname "$0")/start-setupMounts" "$@"
