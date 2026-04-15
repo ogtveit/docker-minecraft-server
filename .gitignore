@@ -6,3 +6,4 @@
 personal-build-and-develop.*
 minecraft-data/*
 mc-backups/*
+.rcon-password

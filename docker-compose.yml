@@ -4,13 +4,14 @@ services:
     environment:
       EULA: "true"
       TYPE: PAPER
+      VERSION: "1.21.10"
       PLUGINS: |
         https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
         https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
       MODRINTH_PROJECTS: |
+        simpleclaimsystem
         viaversion
         luckperms
-        simpleclaimsystem
         lifestealz
       
       SERVER_NAME: "Tveits Effect"
@@ -32,10 +33,14 @@ services:
 
       SNOOPER_ENABLED: "false"
       USE_AIKAR_FLAGS: "true"
-      # MEMORY: "20480M"
+      MEMORY: "20480M"
       ENABLE_ROLLING_LOGS: "true"
       TZ: "Europe/Oslo"
-  
+      RCON_CMDS_STARTUP: |-
+        /gamerule randomTickSpeed 3
+        /gamerule doFireTick false
+      RCON_CMDS_LAST_DISCONNECT: |-
+        /kill @e[type=minecraft:boat]
       # DUMP_SERVER_PROPERTIES: "true"
     ports:
       - "25565:25565" # java
